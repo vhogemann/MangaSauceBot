@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MangaSauceBot": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
