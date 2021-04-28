@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Encodings.Web;
-using Flurl;
-using Flurl.Http;
 using System.Threading.Tasks;
 using System.Web;
+using Flurl.Http;
 using Serilog;
 
 namespace MangaSauceBot.manga

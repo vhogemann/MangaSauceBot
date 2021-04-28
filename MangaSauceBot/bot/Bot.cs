@@ -9,13 +9,13 @@ using Serilog;
 using Tweetinvi.Core.Extensions;
 using Tweetinvi.Models;
 
-namespace MangaSauceBot
+namespace MangaSauceBot.bot
 {
     public class Reply
     {
+        public ITweet Tweet { get; set; }
         public string Message { get; set; }
         public string VideoUrl { get; set; }
-        
         public bool IsAdult { get; set; }
     }
 
@@ -25,24 +25,29 @@ namespace MangaSauceBot
         private readonly TraceMoeService _traceMoe;
         private readonly double _cutOff;
         private readonly int _wait;
+        private readonly int _throughput; // replies per minute
         private readonly string[] _adultTags;
 
-        public Bot(TwitterService twitter, TraceMoeService traceMoe, long? cutOff, int? wait)
+        private readonly Queue<Reply> _replyQueue;
+        
+        public Bot(TwitterService twitter, TraceMoeService traceMoe, long? cutOff, int? wait, int? throghput)
         {
             _twitter = twitter;
             _traceMoe = traceMoe;
+            _throughput = throghput ?? 2;
             _cutOff = cutOff / 100d ?? 0.7d;
             _wait = wait ?? 1000 * 60 * 1; //Wait for a minute
             _adultTags = new[] {"#nsfw", "#adult", "#porn", "#hentai"};
+            _replyQueue = new Queue<Reply>();
         }
 
-        private Reply CreateReply(string author, Document document)
+        private Reply CreateReply(ITweet tweet, Document document)
         {
-            Log.Information("Replying to {Author}", author);
+            Log.Information("Replying to {Author}", tweet.CreatedBy.ScreenName);
             var title = document.TitleEnglish ?? document.TitleNative;
 
             var message = new StringBuilder();
-            message.Append($"Hi @{author}, here's my best guess\n{title}");
+            message.Append($"Hi @{tweet.CreatedBy.ScreenName}, here's my best guess\n{title}");
             if (document.Season != null)
             {
                 message.Append($"Season: {document.Season}\n");
@@ -59,10 +64,16 @@ namespace MangaSauceBot
             }
             
             var videoUrl = _traceMoe.PreviewUri(document);
-            return new Reply {Message = message.ToString(), VideoUrl = videoUrl, IsAdult = document.IsAdult};
+            return new Reply
+            {
+                Message = message.ToString(), 
+                VideoUrl = videoUrl, 
+                IsAdult = document.IsAdult, 
+                Tweet = tweet
+            };
         }
 
-        private Reply[] CreateReplies(string author, bool adult, Response response)
+        private Reply[] CreateReplies(ITweet tweet, Response response)
         {
             Reply[] replies = null;
             if (response.Docs != null && !response.Docs.IsEmpty())
@@ -72,17 +83,17 @@ namespace MangaSauceBot
                     .Where(it =>
                     {
                         var withinBounds = it.Similarity >= _cutOff;
-                        var okAdult = adult || !it.IsAdult;
+                        var okAdult = IsAdult(tweet) || !it.IsAdult;
                         return withinBounds && okAdult;
                     })
                     .Take(1) //Take the first document 
-                    .Select(it => CreateReply(author, it))
+                    .Select(it => CreateReply(tweet, it))
                     .ToArray();
             }
             if (replies != null && !replies.IsEmpty())
                 return replies;
             Log.Information("No matches found");
-            return new[] {new Reply {Message = $"@{author} couldn't find any matches, sorry!"}};
+            return new[] {new Reply {Message = $"@{tweet.CreatedBy.ScreenName} couldn't find any matches, sorry!"}};
         }
 
         private async Task<Response[]> TryParent(ITweet tweet)
@@ -112,11 +123,6 @@ namespace MangaSauceBot
             return await Task.WhenAll(images);
         }
 
-        private async Task<ITweet[]> SendReplies(ITweet tweet, IEnumerable<Reply> replies)
-        {
-            return await Task.WhenAll(replies.Select(it => _twitter.PostReplyAsync(tweet, it.Message, it.VideoUrl, it.IsAdult)));
-        }
-        
         private bool IsAdult(ITweet tweet)
         {
             var text = tweet.Text ?? string.Empty;
@@ -124,16 +130,16 @@ namespace MangaSauceBot
             return tweet.PossiblySensitive || adult;
         }
 
-        private async Task<ITweet[][]> ParseAndReply(ITweet tweet)
+        private async Task ParseAndReply(ITweet tweet)
         {
             var parsed = await ParseTweet(tweet);
             var replies = parsed
                 .Where(it => it != null)
-                .Select(it => CreateReplies(tweet.CreatedBy.ScreenName, IsAdult(tweet), it));
-            return await Task.WhenAll(replies.Select(it => SendReplies(tweet, it)));
+                .Select(it => CreateReplies(tweet, it));
+            replies.SelectMany(it => it).ForEach(it => _replyQueue.Enqueue(it));
         }
 
-        public async Task Run(bool runOnce)
+        private async Task Listen(bool runOnce)
         {
             while (true)
             {
@@ -141,10 +147,36 @@ namespace MangaSauceBot
                 Log.Information("Fetching new tweets");
                 var mentions = await _twitter.FetchMentionsAsync();
                 Log.Information("Found mentions {Length}", mentions.Length);
-                var result = await Task.WhenAll(mentions.Select(ParseAndReply));
+                await Task.WhenAll(mentions.Select(ParseAndReply));
                 if (runOnce) break;
                 await delay;
             }
+        }
+
+        private int SendDelay()
+        {
+            return (60 / _throughput) * 1000;
+        }
+        
+        private async Task Reply(bool runOnce)
+        {
+            while (true)
+            {
+                var delay = Task.Delay(SendDelay());
+                if (_replyQueue.TryDequeue(out var reply))
+                {
+                    await _twitter.PostReplyAsync(reply.Tweet, reply.Message, reply.VideoUrl, reply.IsAdult);
+                    if (runOnce) break;
+                }
+                await delay;
+            }
+        }
+
+        public async Task Run(bool runOnce)
+        {
+            var listen = Listen(runOnce);
+            var reply = Reply(runOnce);
+            await Task.WhenAll(listen, reply);
         }
     }
 }

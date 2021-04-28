@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +9,6 @@ namespace MangaSauceBot.twitter
     public enum MentionStatus
     {
         Replied = 0,
-        Retry = 1,
         Error = 2,
     }
 

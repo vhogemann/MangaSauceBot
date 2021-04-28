@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using MangaSauceBot.bot;
 using MangaSauceBot.manga;
 using MangaSauceBot.twitter;
 using Serilog;
@@ -31,7 +32,8 @@ namespace MangaSauceBot
                 twitter, 
                 manga, 
                 DotEnv.GetAsLong("SEARCH_SIMILARITY_CUTOFF"),
-                DotEnv.GetAsInt("BOT_SLEEP_TIMEOUT"));
+                DotEnv.GetAsInt("BOT_SLEEP_TIMEOUT"),
+                DotEnv.GetAsInt("BOT_REPLY_THROUGHPUT"));
 
             var runOnce = "true".Equals(DotEnv.Get("BOT_RUN_ONCE"));
             
