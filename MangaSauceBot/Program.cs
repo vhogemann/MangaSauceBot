@@ -13,7 +13,7 @@ namespace MangaSauceBot
         {
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.File("manga_sauce_bot.log")
+                //.WriteTo.File("manga_sauce_bot.log")
                 .CreateLogger();
             var root = Directory.GetCurrentDirectory();
             var dotenv = Path.Combine(root, ".env");

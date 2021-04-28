@@ -72,8 +72,8 @@ namespace MangaSauceBot
                     .Where(it =>
                     {
                         var withinBounds = it.Similarity >= _cutOff;
-                        var adultFilter = adult || !it.IsAdult;
-                        return withinBounds && adult;
+                        var okAdult = adult || !it.IsAdult;
+                        return withinBounds && okAdult;
                     })
                     .Take(1) //Take the first document 
                     .Select(it => CreateReply(author, it))
