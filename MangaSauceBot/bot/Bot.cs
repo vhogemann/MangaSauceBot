@@ -47,8 +47,8 @@ namespace MangaSauceBot.bot
             var title = document.TitleEnglish ?? document.TitleNative;
 
             var message = new StringBuilder();
-            message.Append($"Hi @{tweet.CreatedBy.ScreenName}, here's my best guess\n{title}");
-            if (document.Season != null)
+            message.Append($"Hi @{tweet.CreatedBy.ScreenName}, here's my best guess\n{title}\n");
+            if (document.Season != null && !document.Season.Trim().IsEmpty())
             {
                 message.Append($"Season: {document.Season}\n");
             }

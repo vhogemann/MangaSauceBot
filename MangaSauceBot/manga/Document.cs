@@ -17,7 +17,7 @@ namespace MangaSauceBot.manga
         public string Season { get; set; }
         public string Anime { get; set; }
         public string Filename { get; set; }
-        public int? Episode { get; set; }
+        public decimal? Episode { get; set; }
         public string Tokenthumb { get; set; }
         public double? Similarity { get; set; }
         public string Title { get; set; }
