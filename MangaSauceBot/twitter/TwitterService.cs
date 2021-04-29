@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Flurl.Http;
 using Serilog;
@@ -21,17 +22,24 @@ namespace MangaSauceBot.twitter
             _client = new TwitterClient(userCredentials);
         }
         
-        public async Task<ITweet[]> FetchMentionsAsync() {
+        public async Task<ITweet[]> FetchMentionsAsync(IEnumerable<long> inFlight) {
             try
             {
                 var parameters = new GetMentionsTimelineParameters();
                 var latestMention = await _repository.GetLatestMention();
                 if (latestMention != null)
                 {
-                    parameters.SinceId = latestMention.Id;
+                    Log.Information("Latest mention {Mention} on {Date}", latestMention.TweetId, latestMention.Timestamp);
+                    parameters.SinceId = latestMention.TweetId;
                 }
                 var mentions = await _client.Timelines.GetMentionsTimelineAsync(parameters);
-                return mentions;
+
+                var alreadyReplied = await _repository.FindByTweetId(mentions.Select(it => it.Id));
+                var repliedIds = alreadyReplied.Select(it => it.TweetId);
+                return mentions
+                    .Where(it => !repliedIds.Contains(it.Id))
+                    .Where(it => !inFlight.Contains(it.Id))
+                    .ToArray();
             }
             catch (Exception e)
             {
@@ -68,9 +76,9 @@ namespace MangaSauceBot.twitter
             {
                 var entry = new MentionEntry()
                 {
-                    Id = inReplyTo.Id,
+                    TweetId = inReplyTo.Id,
                     Status = reply == null ? MentionStatus.Error : MentionStatus.Replied,
-                    Timestamp = DateTime.Now
+                    Timestamp = reply?.CreatedAt.DateTime ?? DateTime.Now
                 };
                 _repository.Save(entry);
             }

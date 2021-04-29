@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,10 @@ namespace MangaSauceBot.twitter
 
     public class MentionEntry
     {
-        public long Id { get; set; }
+        public int Id { get; set; }
+
+        public long TweetId { get; set; }
+
         public DateTime Timestamp { get; set; }
         public MentionStatus Status { get; set; }
     }
@@ -41,17 +45,23 @@ namespace MangaSauceBot.twitter
             _db.Database.EnsureCreated();
         }
 
-        public Task<MentionEntry> GetLatestMention()
+        public async Task<MentionEntry> GetLatestMention()
         {
-            return _db.Mentions
+            return await _db.Mentions
                 .OrderByDescending(it => it.Timestamp)
                 .Take(1)
                 .FirstOrDefaultAsync<MentionEntry>();
         }
 
+        public async Task<MentionEntry[]> FindByTweetId(IEnumerable<long> tweetIds)
+        {
+            return await _db.Mentions
+                .Where(it => tweetIds.Contains(it.TweetId)).ToArrayAsync();
+        }
+
         public void Save(MentionEntry mention)
         {
-            Log.Information("Tweet {Id} replied", mention.Id);
+            Log.Information("Tweet {Id} replied", mention.TweetId);
             _db.Add(mention);
             _db.SaveChanges();
         }
