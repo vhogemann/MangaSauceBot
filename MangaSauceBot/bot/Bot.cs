@@ -6,6 +6,7 @@ using MangaSauceBot.twitter;
 using Serilog;
 using Tweetinvi.Core.Extensions;
 using Tweetinvi.Models;
+using Tweetinvi.Models.Entities;
 
 namespace MangaSauceBot.bot
 {
@@ -26,12 +27,12 @@ namespace MangaSauceBot.bot
 
         private readonly Queue<Search> _searchQueue;
         
-        public Bot(TwitterService twitter, TraceMoeService traceMoe, long? cutOff, int? wait, int? throghput)
+        public Bot(TwitterService twitter, TraceMoeService traceMoe, long? cutOff, int? wait, int? throughput)
         {
             _twitter = twitter;
             _traceMoe = traceMoe;
             _searchQueue = new Queue<Search>();
-            _throughput = throghput ?? 2;
+            _throughput = throughput ?? 2;
             _cutOff = cutOff / 100d ?? 0.7d;
             _wait = wait ?? 1000 * 60 * 1; //Wait for a minute
             _adultTags = new[] {"#nsfw", "#adult", "#porn", "#hentai"};
@@ -40,18 +41,18 @@ namespace MangaSauceBot.bot
         private Reply[] CreateReplies(ITweet tweet, Response response)
         {
             Reply[] replies = null;
-            if (response.Docs != null && !response.Docs.IsEmpty())
+            if (response.Result != null && !response.Result.IsEmpty())
             {
-                replies = response.Docs
+                replies = response.Result
                     .OrderByDescending(it => it.Similarity)
                     .Where(it =>
                     {
                         var withinBounds = it.Similarity >= _cutOff;
-                        var okAdult = IsAdult(tweet) || !it.IsAdult;
+                        var okAdult = IsAdult(tweet) || it.Anilist is {IsAdult: false};
                         return withinBounds && okAdult;
                     })
                     .Take(1) //Take the first document 
-                    .Select(it => new Reply(tweet, it, _traceMoe.PreviewUri(it)))
+                    .Select(it => new Reply(tweet, it, it.Video))
                     .ToArray();
             }
             if (replies != null && !replies.IsEmpty())
@@ -67,11 +68,10 @@ namespace MangaSauceBot.bot
             {
                 Log.Information("Tweet has no media, trying parent");
                 var parent = await _twitter.FetchParent(tweet);
-                media = parent.Media;
+                media = parent?.Media;
             }
-            media
-                .Where(it => it.MediaType == "photo")
-                .ForEach(it => _searchQueue.Enqueue(new Search { Image = it.MediaURLHttps, Tweet = tweet}));
+            media?.Where(it => it.MediaType == "photo")
+                .ForEach(it => _searchQueue.Enqueue(new Search {Image = it.MediaURLHttps, Tweet = tweet}));
         }
 
         private bool IsAdult(ITweet tweet)

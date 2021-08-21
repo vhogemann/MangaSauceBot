@@ -49,8 +49,8 @@ namespace UnitTests
         {
             var response = JsonConvert.DeserializeObject<Response>(Response);
             Assert.NotNull(response);
-            Assert.IsNotEmpty(response.Docs);
-            Assert.AreEqual(1, response.Docs.Count);
+            Assert.IsNotEmpty(response.Result);
+            Assert.AreEqual(1, response.Result.Count);
         }
 
         [Test]
@@ -60,22 +60,11 @@ namespace UnitTests
             var document = JsonConvert.DeserializeObject<Document>(Document);
             Assert.AreEqual(663.17, document.From);
             Assert.AreEqual(665.42, document.To);
-            Assert.AreEqual(98444, document.AnilistId);
-            Assert.AreEqual(665.08, document.At);
-            Assert.AreEqual("2018-01", document.Season);
+            Assert.AreEqual(98444, document.Anilist);
             Assert.AreEqual("搖曳露營", document.Anime);
             Assert.AreEqual("[Ohys-Raws] Yuru Camp - 05 (AT-X 1280x720 x264 AAC).mp4", document.Filename);
             Assert.AreEqual(5, document.Episode);
-            Assert.AreEqual("bB-8KQuoc6u-1SfzuVnDMw", document.Tokenthumb);
             Assert.AreEqual(0.9563952960290518, document.Similarity);
-            Assert.AreEqual("ゆるキャン△", document.Title);
-            Assert.AreEqual("搖曳露營", document.TitleChinese);
-            Assert.AreEqual("Laid-Back Camp", document.TitleEnglish);
-            Assert.AreEqual("Yuru Camp△", document.TitleRomaji);
-            Assert.AreEqual(34798, document.MalId);
-            Assert.AreEqual(new[] {"Yurucamp", "Yurukyan△"}, document.Synonyms);
-            Assert.AreEqual(Array.Empty<string>(), document.SynonymsChinese);
-            Assert.AreEqual(false, document.IsAdult);
         }
     }
 }

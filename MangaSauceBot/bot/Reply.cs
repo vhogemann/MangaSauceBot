@@ -19,28 +19,24 @@ namespace MangaSauceBot.bot
 
         public Reply(ITweet tweet, Document document, string videoUrl)
         {
-            var title = document.TitleEnglish ?? document.TitleNative;
+            var title = document.Anilist?.Title.English ?? document.Anilist?.Title.Native;
 
             var message = new StringBuilder();
             message.Append($"Hi @{tweet.CreatedBy.ScreenName}, here's my best guess\n{title}\n");
-            if (document.Season != null && !document.Season.Trim().IsEmpty())
-            {
-                message.Append($"Season: {document.Season}\n");
-            }
 
             if (document.Episode != null)
             {
                 message.Append($"Episode: {document.Episode}\n");
             }
 
-            if (document.IsAdult)
+            if (document.Anilist is {IsAdult: true})
             {
                 message.Append("#nsfw #hentai #adult");
             }
 
             Message = message.ToString();
             VideoUrl = videoUrl;
-            IsAdult = document.IsAdult;
+            IsAdult = document.Anilist is {IsAdult: true};
             Tweet = tweet;
         }
     }

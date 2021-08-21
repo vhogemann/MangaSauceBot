@@ -5,29 +5,38 @@ using Newtonsoft.Json.Serialization;
 namespace MangaSauceBot.manga
 {
     public class Response {
-        public List<Document> Docs { get; set; }
+        public List<Document> Result { get; set; }
     }
-    [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
+
+    public class Title
+    {
+        public string Native { get; set; }
+        public string English { get; set; }
+        public string Romaji { get; set; }
+    }
+
+    public class AnilistInfo
+    {
+        public string Id { get; set; }
+        public string IdMal { get; set; }
+        public Title Title { get; set; }
+        public string[] Synonyms { get; set; }
+        public bool IsAdult { get; set; }
+    }
+
     public class Document
     {
+        public string Error { get; set; }
         public double? From { get; set; }
         public double? To { get; set; }
-        public int? AnilistId { get; set; }
-        public double? At { get; set; }
-        public string Season { get; set; }
+        public double Similarity { get; set; }
+        public AnilistInfo? Anilist { get; set; }
         public string Anime { get; set; }
         public string Filename { get; set; }
-        public decimal? Episode { get; set; }
-        public string Tokenthumb { get; set; }
-        public double? Similarity { get; set; }
-        public string Title { get; set; }
-        public string TitleNative { get; set; }
-        public string TitleChinese { get; set; }
-        public string TitleEnglish { get; set; }
-        public string TitleRomaji { get; set; }
-        public int? MalId { get; set; }
-        public List<string> Synonyms { get; set; }
-        public List<string> SynonymsChinese { get; set; }
-        public bool IsAdult { get; set; }
+        public string Episode { get; set; }
+        
+        public string Video { get; set; }
+        
+        public string Image { get; set; }
     }
 }

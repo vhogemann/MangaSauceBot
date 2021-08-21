@@ -8,21 +8,21 @@ namespace MangaSauceBot.manga
 {
     public class TraceMoeService
     {
-        // "https://trace.moe/api/search?url=";
+        // "https://trace.moe/api/search?anilistInfo&url=";
         // "https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?t=${at}&token=${tokenthumb}&mute";
 
         private readonly string _searchUrl;
-        private readonly string _previewUrl;
+        private readonly string _apiKey;
 
-        public TraceMoeService(string searchUrl, string previewUrl)
+        public TraceMoeService(string searchUrl, string previewUrl, string apiKey)
         {
             _searchUrl = searchUrl;
-            _previewUrl = previewUrl;
+            _apiKey = apiKey;
         }
 
         public async Task<Response> Search(string imageUri)
         {
-            var url = $"{_searchUrl}/api/search?url={imageUri}";
+            var url = $"{_searchUrl}/search?anilistInfo&url={imageUri}";
             try
             {
                 var response = await url.GetJsonAsync<Response>();
@@ -33,12 +33,6 @@ namespace MangaSauceBot.manga
                 Log.Error(e, "Failed to search for matches");
                 return null;
             }
-        }
-
-        public string PreviewUri(Document document)
-        {
-            var url = $"{_previewUrl}/video/{document.AnilistId}/{HttpUtility.UrlPathEncode(document.Filename)}?t={document.At}&token={document.Tokenthumb}&mute";
-            return url;
         }
     }
 }

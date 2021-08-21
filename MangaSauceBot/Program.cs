@@ -18,8 +18,13 @@ namespace MangaSauceBot
                 .CreateLogger();
             var root = Directory.GetCurrentDirectory();
             var dotenv = Path.Combine(root, ".env");
+            
             DotEnv.Load(dotenv);
-            var manga = new TraceMoeService("https://trace.moe", "https://media.trace.moe");
+            var apiKey = DotEnv.Get("TRACE_MOE_API_KEY");
+            var manga = new TraceMoeService(
+                "https://api.trace.moe", 
+                "https://media.trace.moe",
+                apiKey);
             var repository = new MentionsRepository();
             var twitter = new TwitterService(
                 DotEnv.Get("TWITTER_CONSUMER_KEY"), 
@@ -36,15 +41,18 @@ namespace MangaSauceBot
                 DotEnv.GetAsInt("BOT_REPLY_THROUGHPUT"));
 
             var runOnce = "true".Equals(DotEnv.Get("BOT_RUN_ONCE"));
-            
-            try
+
+            while (true)
             {
-                await bot.Run(runOnce);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Exiting");
-                throw;
+                try
+                {
+                    await bot.Run(runOnce);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Exiting");
+                    throw;
+                }
             }
         }
     }

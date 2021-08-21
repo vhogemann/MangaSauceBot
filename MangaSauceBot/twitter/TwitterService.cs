@@ -93,7 +93,15 @@ namespace MangaSauceBot.twitter
         public async Task<ITweet> FetchParent(ITweet tweet)
         {
             if (tweet.InReplyToStatusId == null) return null;
-            return await _client.Tweets.GetTweetAsync((long) tweet.InReplyToStatusId);
+            try
+            {
+                return await _client.Tweets.GetTweetAsync((long) tweet.InReplyToStatusId);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to fetch parent tweet");
+                return null;
+            }
         }
     }
 }
