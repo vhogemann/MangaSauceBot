@@ -51,5 +51,12 @@ namespace MangaSauceBot
             }
             return null;
         }
+
+        public static bool GetAsBool(string key)
+        {
+            var value = Get(key);
+            bool.TryParse(value, out var result);
+            return result;
+        }
     }
 }

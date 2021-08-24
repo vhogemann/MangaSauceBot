@@ -25,7 +25,16 @@ namespace MangaSauceBot
                 "https://api.trace.moe", 
                 "https://media.trace.moe",
                 apiKey);
-            var repository = new MentionsRepository();
+
+            var mentionsContext = DotEnv.GetAsBool("USE_SQLITE")
+                ? new MentionsContext(true)
+                : new MentionsContext(
+                    DotEnv.Get("COSMOS_DB_ACCOUNT_ENDPOINT"),
+                    DotEnv.Get("COSMOS_DB_ACCOUNT_KEY"),
+                    DotEnv.Get("COSMOS_DB_DATABASE_NAME"));
+            
+            var repository = new MentionsRepository(
+                mentionsContext);
             var twitter = new TwitterService(
                 DotEnv.Get("TWITTER_CONSUMER_KEY"), 
                 DotEnv.Get("TWITTER_CONSUMER_SECRET"), 

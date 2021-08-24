@@ -15,22 +15,54 @@ namespace MangaSauceBot.twitter
 
     public class MentionEntry
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         public long TweetId { get; set; }
 
         public DateTime Timestamp { get; set; }
         public MentionStatus Status { get; set; }
+
+        public MentionEntry()
+        {
+            Id = Guid.NewGuid().ToString();
+        }
     }
 
     public class MentionsContext:DbContext
     {
-        
+
+        private readonly bool _useSqlite;
+        private readonly string _accountEndpoint;
+        private readonly string _accountKey;
+        private readonly string _databaseName;
         public DbSet<MentionEntry> Mentions { get; set; }
-        
+
+        public MentionsContext(bool useSqlite = true)
+        {
+            _useSqlite = useSqlite;
+        }
+
+        public MentionsContext(string accountEndpoint, string accountKey, string databaseName)
+        {
+            _accountEndpoint = accountEndpoint;
+            _accountKey = accountKey;
+            _databaseName = databaseName;
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=mentions.db");
+            if (_useSqlite)
+            {
+                optionsBuilder.UseSqlite("Data Source=mentions.db");
+            }
+            else
+            {
+                optionsBuilder.UseCosmos(
+                    "https://twitter-bots-db.documents.azure.com:443",
+                    "wrXDB7nxJBuRZq9NhxKlcvB32X6ZJV6iWY6YuLMDehmKsgBaeaXtRDcJYR1bmDZLwpxSojYunyYHERBqb1yGhQ==",
+                    "mangasaucebot"
+                );
+            }
         }
     }
 
@@ -39,9 +71,9 @@ namespace MangaSauceBot.twitter
 
         private readonly MentionsContext _db;
         
-        public MentionsRepository()
+        public MentionsRepository(MentionsContext mentionsContext)
         {
-            _db = new MentionsContext();
+            _db = mentionsContext;
             _db.Database.EnsureCreated();
         }
 
@@ -49,7 +81,6 @@ namespace MangaSauceBot.twitter
         {
             return await _db.Mentions
                 .OrderByDescending(it => it.Timestamp)
-                .Take(1)
                 .FirstOrDefaultAsync<MentionEntry>();
         }
 

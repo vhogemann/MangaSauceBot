@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Flurl.Http" Version="3.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="5.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.5" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
@@ -21,6 +22,12 @@
     <Resource Include=".env">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\Dockerfile">
+      <Link>Dockerfile</Link>
+    </Content>
   </ItemGroup>
 
 </Project>
